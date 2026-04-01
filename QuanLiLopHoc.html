@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lí Lớp Học AI - Ngôi Sao Thông Thái</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Pattaya&family=Orbitron:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root { --accent: #fbbf24; --success: #10b981; --danger: #ef4444; --indigo-glow: rgba(99, 102, 241, 0.5); }
+        body { font-family: 'Quicksand', sans-serif; background: #000; color: white; overflow: hidden; height: 100vh; transition: background 1s ease; }
+        
+        /* Cấu hình giao diện theo chủ đề */
+        .bg-stars { background: radial-gradient(circle at center, #1a1a40 0%, #0d0d2b 100%); }
+        .bg-ocean { background: linear-gradient(180deg, #0ea5e9 0%, #0c4a6e 100%); }
+        .bg-chibi { background: radial-gradient(circle at center, #451a03 0%, #1c0a02 100%); }
+
+        .night-sky { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .twinkling-star { position: absolute; background: white; border-radius: 50%; opacity: 0.5; animation: twinkle var(--duration) infinite ease-in-out; }
+        @keyframes twinkle { 0%, 100% { opacity: 0.3; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+
+        /* Hiệu ứng vật thể bay và xoay khi mở */
+        @keyframes vividFloat { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 33% { transform: translate(12px, -10px) rotate(1.5deg); } 66% { transform: translate(-8px, 8px) rotate(-1.5deg); } }
+        .game-object { animation: vividFloat var(--float-duration, 12s) infinite ease-in-out; cursor: pointer; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.3s; }
+        .game-object:hover { transform: scale(1.1) !important; filter: drop-shadow(0 0 25px rgba(255,255,255,0.5)); }
+        .game-object.revealing { animation: revealSpin 0.8s ease-in-out forwards !important; z-index: 100; }
+        @keyframes revealSpin { 0% { transform: scale(1) rotate(0); } 50% { transform: scale(2.5) rotate(360deg); filter: brightness(2); } 100% { transform: scale(5) rotate(720deg); opacity: 0; } }
+
+        /* Hiệu ứng bóng đèn quét */
+        @keyframes orbit {
+            from { transform: rotate(0deg) translateX(32vw) rotate(0deg); opacity: 0.8; }
+            to { transform: rotate(360deg) translateX(32vw) rotate(-360deg); opacity: 0.8; }
+        }
+        .scanning-bulb {
+            position: fixed; top: 50%; left: 50%; width: 280px; height: 280px; margin-top: -140px; margin-left: -140px;
+            background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+            border-radius: 50%; filter: blur(60px); z-index: 450; pointer-events: none; display: none;
+        }
+
+        /* Typography Custom */
+        .big-title { font-family: 'Pattaya', sans-serif; font-size: clamp(1.8rem, 5vw, 3.5rem); line-height: 1.1; background: linear-gradient(to bottom, #fff7ad 0%, #ffa900 50%, #ff8400 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 10px rgba(255, 165, 0, 0.7)); }
+        .main-header { font-family: 'Orbitron', sans-serif; letter-spacing: 0.2em; background: linear-gradient(to right, #6366f1, #a855f7, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.3)); }
+
+        /* Glassmorphism Panels */
+        .glass-panel { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); backdrop-filter: blur(15px); border-radius: 2.5rem; }
+        .item-card { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; transition: 0.3s; }
+        .item-card:hover { background: rgba(255, 255, 255, 0.08); border-color: var(--accent); }
+        
+        /* Quiz Gameplay UI */
+        .quiz-drop-hole { display: inline-flex; align-items: center; justify-content: center; min-width: 120px; height: 42px; border-bottom: 3px solid var(--accent); margin: 0 8px; background: rgba(251, 191, 36, 0.1); border-radius: 8px 8px 0 0; transition: 0.3s; position: relative; vertical-align: bottom; }
+        .quiz-drop-hole::before { content: attr(data-index); position: absolute; top: -24px; left: 0; font-size: 12px; font-weight: 900; color: var(--accent); }
+        .quiz-drop-hole.drag-over { background: rgba(251, 191, 36, 0.3); transform: scale(1.05); }
+        
+        .draggable-chip { background: var(--indigo-glow); border: 1px solid rgba(255,255,255,0.2); padding: 12px 24px; border-radius: 14px; cursor: grab; font-weight: bold; transition: 0.2s; user-select: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .draggable-chip:active { cursor: grabbing; transform: scale(0.95); }
+
+        .matching-selected { background: #22d3ee !important; transform: scale(1.05); border-color: #fff !important; box-shadow: 0 0 20px rgba(34, 211, 238, 0.6); }
+        .matching-solved { background: var(--success) !important; opacity: 0.5; pointer-events: none; border-color: transparent !important; }
+
+        /* Grouping Zones */
+        .group-box { border-radius: 2.5rem; padding: 28px; transition: 0.4s; position: relative; border: 3px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.3); min-height: 250px; }
+        .group-box.zone-1 { border-color: #ec4899; box-shadow: inset 0 0 30px rgba(236, 72, 153, 0.1); }
+        .group-box.zone-2 { border-color: #06b6d4; box-shadow: inset 0 0 30px rgba(6, 182, 212, 0.1); }
+        .group-box.drag-over { transform: scale(1.03); background: rgba(255,255,255,0.05); }
+        .group-box.zone-1.drag-over { box-shadow: 0 0 40px rgba(236, 72, 153, 0.4); }
+        .group-box.zone-2.drag-over { box-shadow: 0 0 40px rgba(6, 182, 212, 0.4); }
+
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        
+        .modal-pop { animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes modalPop { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .fb-blank-tag { background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 8px; font-size: 11px; border: 1px solid rgba(255,255,255,0.1); color: var(--accent); }
+        .fit-img { width: 100%; height: 100%; object-fit: contain; border-radius: 999px; }
+    </style>
+</head>
+<body class="bg-stars">
+
+    <div id="themeBackground" class="night-sky"></div>
+    <div id="messageBox" class="fixed top-6 left-1/2 -translate-x-1/2 z-[3000] px-8 py-3 rounded-full font-bold shadow-2xl hidden transition-all duration-300 text-white text-center"></div>
+
+    <!-- LAYER BÓNG ĐÈN QUÉT (Chỉ hiển thị khi quay số) -->
+    <div id="scanningLightLayer">
+        <div class="scanning-bulb" style="animation: orbit 2.5s linear infinite;"></div>
+        <div class="scanning-bulb" style="animation: orbit 3s linear infinite reverse; animation-delay: -0.5s;"></div>
+        <div class="scanning-bulb" style="animation: orbit 3.5s ease-in-out infinite; animation-delay: -1s;"></div>
+        <div class="scanning-bulb" style="animation: orbit 2s linear infinite; animation-delay: -1.5s;"></div>
+    </div>
+
+    <!-- SUSPENSE OVERLAY -->
+    <div id="suspenseContainer" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 500; width: 100%; text-align: center; pointer-events: none;">
+        <div id="suspenseName" class="suspense-text text-white" style="font-family: 'Orbitron', sans-serif; font-size: 4.5rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 35px #fbbf24; animation: textFlicker 0.08s infinite alternate;">...</div>
+    </div>
+
+    <!-- MÀN HÌNH CÀI ĐẶT -->
+    <div id="setupScreen" class="flex flex-col items-center h-full px-4 overflow-y-auto py-10 relative text-white">
+        <button onclick="window.toggleQuizEditor()" class="absolute top-6 right-6 z-50 bg-indigo-600 hover:bg-indigo-500 p-4 rounded-3xl shadow-xl transition-all transform hover:scale-105 active:scale-95 flex items-center gap-3">
+            <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"/></svg>
+            <span class="font-black text-xs uppercase tracking-wider">NHẬP CÂU HỎI</span>
+        </button>
+
+        <div class="text-center mb-8">
+            <h2 class="main-header text-xl md:text-2xl font-black uppercase mb-2">QUẢN LÍ LỚP HỌC AI</h2>
+            <h1 id="setupMainTitle" class="big-title uppercase">NGÔI SAO THÔNG THÁI</h1>
+        </div>
+        
+        <div id="mainConfigPanel" class="glass-panel p-8 w-full max-w-7xl shadow-2xl flex flex-col gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- PANEL CHỦ ĐỀ & KHO ẢNH -->
+                <div class="lg:col-span-6 flex flex-col gap-8">
+                    <div>
+                        <h3 class="text-lg text-yellow-300 font-bold mb-4 uppercase tracking-tighter text-left">1. Chủ Đề Trò Chơi</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <button onclick="window.selectTheme('STAR')" id="btnThemeSTAR" class="p-4 rounded-2xl border-4 border-yellow-400 bg-indigo-900/30 hover:bg-indigo-900/50 transition-all text-center">
+                                <div class="text-3xl mb-1">⭐</div><div class="text-[10px] font-bold uppercase">Ngôi Sao</div>
+                            </button>
+                            <button onclick="window.selectTheme('OCEAN')" id="btnThemeOCEAN" class="p-4 rounded-2xl border-4 border-transparent bg-blue-900/30 hover:bg-blue-900/50 transition-all text-center">
+                                <div class="text-3xl mb-1">🐋</div><div class="text-[10px] font-bold uppercase">Đại Dương</div>
+                            </button>
+                            <button onclick="window.selectTheme('CHIBI')" id="btnThemeCHIBI" class="p-4 rounded-2xl border-4 border-transparent bg-amber-900/30 hover:bg-amber-900/50 transition-all text-center text-white">
+                                <div class="text-3xl mb-1">👑</div><div class="text-[10px] font-bold uppercase">Tìm Vua</div>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-lg text-cyan-400 font-bold mb-4 uppercase tracking-tighter text-left">2. Kho ảnh (Offline)</h3>
+                        <div class="grid grid-cols-3 gap-3 text-center">
+                            <div class="item-card p-3 flex flex-col items-center">
+                                <span class="text-[9px] font-bold text-yellow-400 uppercase mb-1">Ngôi Sao</span>
+                                <div id="label_star" class="text-[10px] text-white/50 mb-2">0 ảnh</div>
+                                <div class="flex flex-col gap-1.5 w-full">
+                                    <input type="file" id="up_star_replace" multiple class="hidden" onchange="window.handleMultiUpload(this, 'star', false)">
+                                    <button onclick="document.getElementById('up_star_replace').click()" class="bg-red-600/50 text-[8px] py-1.5 rounded-lg font-bold uppercase">Thay mới</button>
+                                    <input type="file" id="up_star_append" multiple class="hidden" onchange="window.handleMultiUpload(this, 'star', true)">
+                                    <button onclick="document.getElementById('up_star_append').click()" class="bg-indigo-600/50 text-[8px] py-1.5 rounded-lg font-bold uppercase">Thêm ảnh</button>
+                                </div>
+                            </div>
+                            <div class="item-card p-3 flex flex-col items-center">
+                                <span class="text-[9px] font-bold text-blue-400 uppercase mb-1">Đại Dương</span>
+                                <div id="label_ocean" class="text-[10px] text-white/50 mb-2">0 ảnh</div>
+                                <div class="flex flex-col gap-1.5 w-full">
+                                    <input type="file" id="up_ocean_replace" multiple class="hidden" onchange="window.handleMultiUpload(this, 'ocean', false)">
+                                    <button onclick="document.getElementById('up_ocean_replace').click()" class="bg-red-600/50 text-[8px] py-1.5 rounded-lg font-bold uppercase">Thay mới</button>
+                                    <input type="file" id="up_ocean_append" multiple class="hidden" onchange="window.handleMultiUpload(this, 'ocean', true)">
+                                    <button onclick="document.getElementById('up_ocean_append').click()" class="bg-indigo-600/50 text-[8px] py-1.5 rounded-lg font-bold uppercase">Thêm ảnh</button>
+                                </div>
+                            </div>
+                            <div class="item-card p-3 flex flex-col items-center">
+                                <span class="text-[9px] font-bold text-amber-400 uppercase mb-1">Nhân Vật</span>
+                                <div id="label_king" class="text-[9px] text-white/50 mb-2 text-center leading-tight">Mặc định</div>
+                                <div class="flex flex-col gap-1.5 w-full">
+                                    <input type="file" id="up_king_common" class="hidden" onchange="window.handleSingleUpload(this, 'king_common')">
+                                    <button onclick="document.getElementById('up_king_common').click()" class="bg-amber-700/50 text-[8px] py-1.5 rounded-lg font-bold uppercase">Dân thường</button>
+                                    <input type="file" id="up_king_winner" class="hidden" onchange="window.handleSingleUpload(this, 'king_winner')">
+                                    <button onclick="document.getElementById('up_king_winner').click()" class="bg-amber-500/80 text-[8px] py-1.5 rounded-lg font-bold uppercase text-black">Vua (Thắng)</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QUẢN LÝ LỚP HỌC -->
+                <div class="lg:col-span-6 grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+                    <div class="flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg text-green-400 font-bold uppercase tracking-tighter">📂 Lớp học</h3>
+                            <button onclick="window.clearNames()" class="text-[9px] bg-white/10 px-4 py-1.5 rounded-full font-bold uppercase hover:bg-white/20 transition-all">Mới</button>
+                        </div>
+                        <div id="savedClassesList" class="custom-scroll space-y-2 h-[180px] overflow-y-auto pr-2 mb-4"></div>
+                        <div class="p-3 bg-black/40 rounded-2xl border border-white/10 flex gap-2">
+                            <input type="text" id="newClassName" placeholder="Tên lớp..." class="flex-1 bg-transparent text-white text-xs outline-none px-2">
+                            <button onclick="window.saveCurrentClass()" class="bg-green-600 px-4 py-2 rounded-xl text-[10px] font-bold uppercase active:scale-95 transition-all">Lưu</button>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <h3 class="text-lg text-yellow-300 font-bold mb-4 text-center uppercase tracking-tighter">👤 Học Sinh</h3>
+                        <textarea id="studentNames" placeholder="Mỗi dòng 1 tên..." class="flex-grow min-h-[240px] bg-black/40 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none custom-scroll text-left focus:border-indigo-500 transition-all"></textarea>
+                    </div>
+                </div>
+
+                <!-- TRÌNH SOẠN BÀI TẬP (Ẩn mặc định) -->
+                <div id="colQuizEditor" class="lg:col-span-12 hidden flex flex-col pt-10 border-t border-white/10">
+                    <div class="flex flex-col md:flex-row items-center justify-between mb-8 gap-4">
+                        <h3 id="editorStatusTitle" class="text-2xl text-cyan-400 font-black uppercase">🚀 Trình soạn bài tập</h3>
+                        <div class="flex items-center gap-4">
+                            <select id="quizTypeSelector" onchange="window.switchQuizInputForm(this.value)" class="bg-cyan-900 border-2 border-cyan-500 rounded-full px-8 py-2 text-sm font-bold outline-none text-white">
+                                <option value="MULTIPLE_CHOICE">Trắc nghiệm</option>
+                                <option value="MATCHING">Ghép đôi (Nối vế)</option>
+                                <option value="FILL_BLANK">Điền từ (Bôi đen)</option>
+                                <option value="GROUPING">Phân loại nhóm</option>
+                            </select>
+                            <button onclick="window.resetEditor()" class="text-[10px] bg-red-600 px-6 py-2.5 rounded-full font-bold uppercase transition-all hover:bg-red-500">Xóa trắng</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 text-left">
+                        <div class="flex flex-col gap-5">
+                            <div id="formFILL_BLANK" class="hidden bg-black/40 p-6 rounded-3xl border border-cyan-900/50 space-y-4">
+                                <textarea id="qInput_FB" placeholder="Bôi đen từ để tạo ô trống..." class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm h-36 outline-none focus:border-cyan-400 text-left transition-all"></textarea>
+                                <button onclick="window.createBlankFromSelection()" class="bg-indigo-600 py-4 rounded-xl font-bold text-xs uppercase w-full active:scale-95">TẠO Ô TRỐNG 🖍️</button>
+                                <div id="fbBlankListPreview" class="flex flex-wrap gap-2 p-3 bg-white/5 rounded-xl min-h-[45px]"></div>
+                            </div>
+                            <div id="formMULTIPLE_CHOICE" class="bg-black/40 p-6 rounded-3xl border border-cyan-900/50 space-y-4">
+                                <input type="text" id="qInput_MC" placeholder="Câu hỏi trắc nghiệm..." class="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm outline-none text-left focus:border-cyan-400">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <input type="text" id="optA" placeholder="A" class="bg-white/10 p-2 text-xs text-white border border-white/10 rounded-lg text-left"><input type="text" id="optB" placeholder="B" class="bg-white/10 p-2 text-xs text-white border border-white/10 rounded-lg text-left"><input type="text" id="optC" placeholder="C" class="bg-white/10 p-2 text-xs text-white border border-white/10 rounded-lg text-left"><input type="text" id="optD" placeholder="D" class="bg-white/10 p-2 text-xs text-white border border-white/10 rounded-lg text-left">
+                                </div>
+                                <select id="correctIdx" class="bg-indigo-950 p-2 text-white text-xs w-full font-bold border border-white/10 rounded-lg text-center"><option value="0">Đúng: A</option><option value="1">Đúng: B</option><option value="2">Đúng: C</option><option value="3">Đúng: D</option></select>
+                            </div>
+                            <div id="formMATCHING" class="hidden bg-black/40 p-6 rounded-3xl border border-cyan-900/50 space-y-4">
+                                <input type="text" id="qInput_Match" placeholder="Hướng dẫn..." class="w-full bg-white/5 p-4 text-sm border border-white/10 rounded-xl outline-none focus:border-cyan-400">
+                                <div id="matchingPairsContainer" class="space-y-2"></div>
+                                <button onclick="window.addMatchingRow()" class="text-[11px] bg-indigo-600 px-8 py-2 rounded-lg font-bold uppercase transition-all active:scale-95">+ Thêm vế mới</button>
+                            </div>
+                            <div id="formGROUPING" class="hidden bg-black/40 p-6 rounded-3xl border border-cyan-900/50 space-y-4">
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div><input type="text" id="groupName1" placeholder="Nhóm 1" class="w-full p-2 text-xs bg-white/10 text-white border border-white/10 rounded-lg mb-2 text-left focus:border-pink-500"><textarea id="groupItems1" placeholder="Mục 1, Mục 2..." class="w-full p-3 h-24 text-xs text-white bg-white/5 rounded-lg outline-none text-left"></textarea></div>
+                                    <div><input type="text" id="groupName2" placeholder="Nhóm 2" class="w-full p-2 text-xs bg-white/10 text-white border border-white/10 rounded-lg mb-2 text-left focus:border-cyan-400"><textarea id="groupItems2" placeholder="Mục A, Mục B..." class="w-full p-3 h-24 text-xs text-white bg-white/5 rounded-lg outline-none text-left"></textarea></div>
+                                </div>
+                            </div>
+                            <div class="flex gap-4">
+                                <button id="btnSaveQuiz" onclick="window.addOrUpdateQuizItem()" class="flex-1 bg-cyan-600 py-5 rounded-2xl font-bold uppercase transition-all hover:bg-cyan-500 shadow-lg active:scale-95">Lưu Câu Hỏi ➕</button>
+                                <button onclick="window.saveCurrentQuizSet()" class="bg-yellow-600 text-black py-5 px-10 rounded-2xl font-bold uppercase transition-all hover:bg-yellow-500 active:scale-95">Lưu Bộ 💾</button>
+                            </div>
+                            <input type="text" id="newQuizSetName" placeholder="Tên bộ câu hỏi..." class="bg-white/10 p-3 text-xs rounded-xl border border-white/10 text-left">
+                        </div>
+                        <div class="flex flex-col gap-4">
+                            <div id="savedQuizSetsList" class="custom-scroll grid grid-cols-2 gap-2 h-[120px] overflow-y-auto bg-black/30 p-3 rounded-2xl text-xs"></div>
+                            <div class="text-[10px] text-white/40 uppercase font-bold px-2 italic text-center">Bấm vào câu bên dưới để sửa:</div>
+                            <div id="quizPreviewList" class="custom-scroll flex-grow h-[260px] overflow-y-auto space-y-2 bg-black/30 p-4 rounded-3xl text-left text-[11px]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="window.startGame()" class="bg-gradient-to-r from-yellow-500 to-yellow-700 hover:scale-105 py-6 px-28 rounded-full text-2xl font-black transition-all shadow-2xl active:scale-95 uppercase tracking-widest border-b-6 border-yellow-800 mx-auto">BẮT ĐẦU TRÒ CHƠI 🚀</button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH CHƠI -->
+    <div id="gameScreen" class="hidden h-full flex flex-col p-6 relative">
+        <div class="flex justify-between items-center mb-8 bg-black/60 p-5 rounded-3xl border border-yellow-600/20 backdrop-blur-2xl z-10">
+            <button onclick="window.backToSetup()" class="text-white/60 hover:text-white text-sm font-bold transition-all">← QUAY LẠI</button>
+            <div class="flex bg-black/40 p-1.5 rounded-full border border-white/10">
+                <button id="playModeName" onclick="window.setPlayMode('NAME')" class="px-10 py-2.5 rounded-full font-black text-xs mode-toggle-active uppercase">Tìm Học Sinh</button>
+                <button id="playModeQuiz" onclick="window.setPlayMode('QUIZ')" class="px-10 py-2.5 rounded-full font-black text-xs uppercase">Câu hỏi</button>
+            </div>
+            <div id="remainingCount" class="bg-yellow-400 text-indigo-950 px-10 py-2.5 rounded-full font-black text-2xl shadow-inner border-2 border-yellow-200">0</div>
+        </div>
+        <div class="text-center mb-6 z-10">
+            <h2 id="mainGameTitle" class="big-title uppercase">NGÔI SAO THÔNG THÁI</h2>
+            <div id="chibiPickControls" class="hidden mt-8 text-center">
+                <button id="btnStartPick" onclick="window.startChibiPick()" class="bg-red-600 text-white font-black py-6 px-24 rounded-full text-2xl shadow-2xl animate-pulse uppercase border-4 border-yellow-400 transform hover:scale-110 active:scale-95 mx-auto">TÌM SAO THÔNG THÁI 🔍</button>
+            </div>
+        </div>
+        <div id="starsGrid" class="flex-grow flex flex-wrap justify-center items-center gap-12 overflow-y-auto p-12 custom-scroll z-10"></div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="quizModal" class="hidden fixed inset-0 z-[180] flex items-center justify-center bg-black/95 backdrop-blur-xl px-4 text-center">
+        <div class="bg-indigo-950 border-4 border-cyan-400 p-10 rounded-[4rem] w-full max-w-5xl modal-pop shadow-2xl relative flex flex-col min-h-[600px] text-white">
+            <div id="qHeader" class="mb-10 text-left">
+                <div class="text-cyan-400 text-[11px] font-black uppercase tracking-widest mb-2">Thử thách trí tuệ (Offline Mode)</div>
+                <div id="qText" class="text-3xl md:text-5xl font-black text-white leading-tight">?</div>
+            </div>
+            <div id="quizInteractionArea" class="flex-grow flex flex-col justify-center overflow-y-auto custom-scroll px-2"></div>
+            <div id="quizFeedback" class="hidden absolute inset-0 bg-indigo-950/98 flex flex-col items-center justify-center z-50 rounded-[4rem]">
+                <div class="text-9xl mb-8">🎉</div>
+                <div class="text-6xl font-black text-yellow-400 uppercase mb-12">Chính Xác!</div>
+                <button onclick="window.closeModal('quizModal')" class="bg-cyan-500 text-white font-black py-6 px-28 rounded-full text-3xl shadow-xl transition-all hover:scale-105">Tiếp tục ➔</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="resultModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-2xl px-4 text-center text-white">
+        <div class="bg-indigo-950 p-12 rounded-[5.5rem] border-8 border-yellow-400 max-w-3xl w-full modal-pop shadow-2xl">
+            <div id="winnerIconDisplay" class="w-44 h-44 mx-auto mb-10 rounded-full border-4 border-yellow-400 shadow-2xl overflow-hidden flex items-center justify-center bg-black/40"></div>
+            <div class="text-yellow-200 text-2xl mb-3 italic font-bold" id="resultLabel">Hào quang tỏa sáng...</div>
+            <div id="winnerName" class="text-6xl md:text-8xl font-black text-white uppercase mb-8 drop-shadow-2xl">Tên</div>
+            <div id="winnerSubText" class="text-yellow-400 text-2xl font-black uppercase tracking-widest bg-black/40 py-6 px-6 rounded-[2.5rem]">CHÚC MỪNG NGÔI SAO THÔNG THÁI NHẤT HÔM NAY</div>
+            <button onclick="window.closeModal('resultModal')" class="mt-12 bg-yellow-400 text-indigo-950 font-black py-6 px-28 rounded-full text-2xl uppercase border-b-8 border-yellow-600 active:scale-95">TIẾP TỤC</button>
+        </div>
+    </div>
+
+    <script>
+        // --- ÂM THANH ---
+        let audioCtx = null;
+        let bgmInterval = null;
+        window.initAudio = () => { if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === 'suspended') audioCtx.resume(); };
+        window.playSound = (t) => {
+            window.initAudio(); const n = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+            if(t==='ting'){ o.type='sine'; o.frequency.setValueAtTime(1000, n); g.gain.setValueAtTime(0.2, n); g.gain.exponentialRampToValueAtTime(0.01, n+0.3); o.start(); o.stop(n+0.3); }
+            else if(t==='wrong'){ o.type='sawtooth'; o.frequency.setValueAtTime(120, n); g.gain.setValueAtTime(0.2, n); g.gain.linearRampToValueAtTime(0, n+0.4); o.start(); o.stop(n+0.4); }
+            else if(t==='win'){ [523, 659, 784, 1046].forEach((f,i) => { const osc=audioCtx.createOscillator(), gn=audioCtx.createGain(); osc.connect(gn); gn.connect(audioCtx.destination); osc.type='triangle'; osc.frequency.setValueAtTime(f,n+i*0.1); gn.gain.setValueAtTime(0.1,n+i*0.1); gn.gain.exponentialRampToValueAtTime(0.01,n+i*0.1+0.6); osc.start(n+i*0.1); osc.stop(n+i*0.1+0.6); }); }
+        };
+        window.startBGM = () => { 
+            window.initAudio(); if(bgmInterval) return; let startT = Date.now();
+            bgmInterval = setInterval(() => { 
+                const el = (Date.now() - startT) / 1000; const n = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+                o.connect(g); g.connect(audioCtx.destination); o.type = 'square';
+                o.frequency.setValueAtTime(100 + (el * 35), n); g.gain.setValueAtTime(0.03, n); g.gain.exponentialRampToValueAtTime(0.001, n+0.1);
+                o.start(); o.stop(n+0.1);
+            }, 110 - (Date.now() - startT)/45);
+        };
+        window.stopBGM = () => { if(bgmInterval){ clearInterval(bgmInterval); bgmInterval = null; } };
+
+        // --- CORE ---
+        const COLORS = { accent: '#fbbf24', danger: '#ef4444', success: '#10b981' };
+        const ENCOURAGEMENT = ["Cố lên!", "Gần đúng rồi!", "Nghĩ kỹ thêm nhé!", "Bạn làm được mà!", "Thử cách khác xem!", "Sắp ra rồi!"];
+        let db = null;
+        let collections = { star: [], ocean: [], king_common: null, king_winner: null };
+        let quizDataList = [], namePool = [], quizPool = [], currentMode = 'NAME', currentTheme = 'STAR', currentFBBlanks = [];
+        let editingQuizIndex = null;
+
+        const SVG_ASSETS = {
+            KING_DEFAULT: `<svg viewBox="0 0 64 64" class="w-full h-full"><path d="M12 40c0-10 8-15 20-15s20 5 20 15v20H12V40z" fill="#FACC15"/><circle cx="32" cy="28" r="18" fill="#FFDBAC"/><path d="M16 18l4-10 6 6 6-8 6 8 6-6 4 10H16z" fill="#FACC15"/></svg>`,
+            OCEAN_DEFAULT: `<svg viewBox="0 0 64 64" class="w-full h-full"><circle cx="32" cy="32" r="26" fill="#FF8C00"/><rect x="18" y="6" width="10" height="52" fill="white" rx="2"/></svg>`,
+            SPACESHIP: (n) => `<svg viewBox="0 0 64 64" class="w-full h-full"><path d="M32 4C22 4 16 14 16 32c0 10 6 18 16 18s16-8 16-18z" fill="#CBD5E1"/><text x="32" y="43" text-anchor="middle" fill="#22D3EE" font-size="9" font-family="Orbitron" font-weight="bold">${n}</text></svg>`,
+            STAR_DEFAULT: `<svg fill="#facc15" viewBox="0 0 20 20" class="w-full h-full"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>`
+        };
+
+        // --- CƠ SỞ DỮ LIỆU ---
+        window.initDB = () => {
+            const req = indexedDB.open('OfflineWiseStar_V40_Optimized', 1);
+            req.onupgradeneeded = e => { const d = e.target.result; d.createObjectStore('Classes', {keyPath:'id', autoIncrement:true}); d.createObjectStore('QuizSets', {keyPath:'id', autoIncrement:true}); d.createObjectStore('Collections'); };
+            req.onsuccess = e => { db = e.target.result; window.loadSavedClasses(); window.loadSavedQuizSets(); window.loadCollections(); };
+        };
+        window.saveCollections = () => { if(!db) return; const tx = db.transaction('Collections', 'readwrite'); Object.keys(collections).forEach(k => tx.objectStore('Collections').put(collections[k], k)); tx.oncomplete = window.updateCollectionUI; };
+        window.loadCollections = () => { if(!db) return; const s = db.transaction('Collections', 'readonly').objectStore('Collections'); s.getAllKeys().onsuccess = e => { e.target.result.forEach(k => s.get(k).onsuccess = ev => { collections[k] = ev.target.result; window.updateCollectionUI(); }); }; };
+        window.updateCollectionUI = () => {
+            const sL=document.getElementById('label_star'), oL=document.getElementById('label_ocean'), kL=document.getElementById('label_king');
+            if(sL) sL.innerText = `${collections.star.length} ảnh`; if(oL) oL.innerText = `${collections.ocean.length} ảnh`;
+            if(kL) kL.innerHTML = `${collections.king_common?"Dân ✅":"Dân ❌"}<br>${collections.king_winner?"Vua ✅":"Vua ❌"}`;
+        };
+        async function removeWhiteBg(base64) {
+            return new Promise(res => {
+                const img = new Image(); img.onload = () => {
+                    const c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+                    const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0);
+                    const d = ctx.getImageData(0,0,c.width,c.height);
+                    for(let i=0; i<d.data.length; i+=4) if(d.data[i]>245 && d.data[i+1]>245 && d.data[i+2]>245) d.data[i+3]=0;
+                    ctx.putImageData(d,0,0); res(c.toDataURL());
+                }; img.src = base64;
+            });
+        }
+        window.handleMultiUpload = async (input, type, isAppend) => {
+            const fs = Array.from(input.files); if(!fs.length) return; if(!isAppend) collections[type] = [];
+            for(let f of fs){ const r = new FileReader(); r.onload = async e => { collections[type].push(await removeWhiteBg(e.target.result)); window.saveCollections(); }; r.readAsDataURL(f); }
+        };
+        window.handleSingleUpload = (input, type) => {
+            const f = input.files[0]; if(!f) return; const r = new FileReader(); r.onload = async e => { collections[type] = await removeWhiteBg(e.target.result); window.saveCollections(); }; r.readAsDataURL(f);
+        };
+
+        // --- LỚP HỌC ---
+        window.loadSavedClasses = () => { if(!db) return; db.transaction('Classes','readonly').objectStore('Classes').getAll().onsuccess = e => { const c = document.getElementById('savedClassesList'); c.innerHTML = ''; e.target.result.forEach(i => { const d = document.createElement('div'); d.className = "item-card p-3 cursor-pointer text-[11px] font-bold flex justify-between items-center mb-1 transition-all"; d.innerHTML = `<span>${i.className}</span><button onclick="event.stopPropagation(); window.deleteClass(${i.id})">✕</button>`; d.onclick = () => { document.getElementById('studentNames').value = i.names.join('\n'); document.getElementById('newClassName').value = i.className; window.playSound('ting'); }; c.appendChild(d); }); }; };
+        window.saveCurrentClass = () => { if(!db) return; const cn = document.getElementById('newClassName').value.trim(), names = document.getElementById('studentNames').value.split('\n').map(s=>s.trim()).filter(s=>s); if(!cn || !names.length) return window.showMessage("Thiếu thông tin!"); const tx = db.transaction('Classes','readwrite'); tx.objectStore('Classes').add({className: cn, names}); tx.oncomplete = () => { window.loadSavedClasses(); window.showMessage("Đã lưu lớp!", COLORS.success); document.getElementById('newClassName').value = ''; }; };
+        window.deleteClass = (id) => { if(confirm("Xóa lớp?")) db.transaction('Classes','readwrite').objectStore('Classes').delete(id).onsuccess = window.loadSavedClasses; };
+        window.clearNames = () => { document.getElementById('studentNames').value = ''; document.getElementById('newClassName').value = ''; };
+
+        // --- TRÌNH SOẠN THẢO ---
+        window.toggleQuizEditor = () => document.getElementById('colQuizEditor').classList.toggle('hidden');
+        window.switchQuizInputForm = t => ['MULTIPLE_CHOICE','MATCHING','FILL_BLANK','GROUPING'].forEach(f => document.getElementById(`form${f}`).classList.toggle('hidden', f!==t));
+        window.resetEditor = () => {
+            editingQuizIndex = null; document.getElementById('editorStatusTitle').innerText = "🚀 Trình soạn bài tập";
+            document.getElementById('btnSaveQuiz').innerText = "Lưu Câu Hỏi ➕";
+            document.querySelectorAll('#colQuizEditor input[type="text"], #colQuizEditor textarea').forEach(el => el.value = '');
+            document.getElementById('matchingPairsContainer').innerHTML = ''; window.addMatchingRow(); window.addMatchingRow();
+            document.getElementById('fbBlankListPreview').innerHTML = ''; currentFBBlanks = [];
+        };
+        window.loadQuizToEditor = (i) => {
+            editingQuizIndex = i; const q = quizDataList[i]; document.getElementById('editorStatusTitle').innerText = `📝 Sửa câu #${i+1}`;
+            document.getElementById('btnSaveQuiz').innerText = "Cập Nhật ✅"; document.getElementById('quizTypeSelector').value = q.type; window.switchQuizInputForm(q.type);
+            if(q.type==='MULTIPLE_CHOICE'){ document.getElementById('qInput_MC').value = q.q; q.options.forEach((o,idx) => document.getElementById(['optA','optB','optC','optD'][idx]).value = o); document.getElementById('correctIdx').value = q.correct; }
+            else if(q.type==='FILL_BLANK'){ document.getElementById('qInput_FB').value = q.fullText; currentFBBlanks = JSON.parse(JSON.stringify(q.blanks)); window.refreshBlankPreview(); }
+            else if(q.type==='MATCHING'){ document.getElementById('qInput_Match').value = q.q; const c = document.getElementById('matchingPairsContainer'); c.innerHTML = ''; q.pairs.forEach(p => { const d = document.createElement('div'); d.className = "grid grid-cols-2 gap-4 mb-1"; d.innerHTML = `<input type="text" value="${p.l}" class="m-left bg-white/10 p-2 text-xs rounded border border-white/10"><input type="text" value="${p.r}" class="m-right bg-white/10 p-2 text-xs rounded border border-white/10">`; c.appendChild(d); }); }
+            else if(q.type==='GROUPING'){ document.getElementById('groupName1').value = q.groups[0].name; document.getElementById('groupItems1').value = q.groups[0].items.join('\n'); document.getElementById('groupName2').value = q.groups[1].name; document.getElementById('groupItems2').value = q.groups[1].items.join('\n'); }
+            window.showMessage("Đã nạp dữ liệu sửa!");
+        };
+        window.createBlankFromSelection = () => { const ta = document.getElementById('qInput_FB'); const s = ta.selectionStart, e = ta.selectionEnd, v = ta.value.substring(s, e).trim(); if(!v) return window.showMessage("Bôi đen từ!"); currentFBBlanks.push({start: s, end: e, val: v}); currentFBBlanks.sort((a,b)=>a.start-b.start); window.refreshBlankPreview(); };
+        window.removeBlank = (i) => { currentFBBlanks.splice(i, 1); window.refreshBlankPreview(); };
+        window.refreshBlankPreview = () => { const p = document.getElementById('fbBlankListPreview'); p.innerHTML = ''; currentFBBlanks.forEach((b, i) => { const t = document.createElement('span'); t.className = "fb-blank-tag"; t.innerHTML = `[${i+1}] ${b.val} <span onclick="window.removeBlank(${i})" class="cursor-pointer ml-1">✕</span>`; p.appendChild(t); }); };
+        window.addMatchingRow = () => { const c = document.getElementById('matchingPairsContainer'); const d = document.createElement('div'); d.className = "grid grid-cols-2 gap-4 mb-1"; d.innerHTML = `<input type="text" placeholder="Vế trái" class="m-left bg-white/10 p-2 text-xs text-white rounded border border-white/10"><input type="text" placeholder="Vế phải" class="m-right bg-white/10 p-2 text-xs text-white rounded border border-white/10">`; c.appendChild(d); };
+        window.addOrUpdateQuizItem = () => {
+            const t = document.getElementById('quizTypeSelector').value; let q = { type: t };
+            if(t==='MULTIPLE_CHOICE'){ const txt = document.getElementById('qInput_MC').value, os = [document.getElementById('optA').value, document.getElementById('optB').value, document.getElementById('optC').value, document.getElementById('optD').value]; if(!txt || os.some(o=>!o)) return window.showMessage("Điền đủ nội dung!"); q.q = txt; q.options = os; q.correct = parseInt(document.getElementById('correctIdx').value); }
+            else if(t==='FILL_BLANK'){ const ft = document.getElementById('qInput_FB').value; if(!ft || !currentFBBlanks.length) return window.showMessage("Bôi đen từ!"); q.q = "Kéo từ vào vị trí ô trống:"; q.fullText = ft; q.blanks = JSON.parse(JSON.stringify(currentFBBlanks)); }
+            else if(t==='MATCHING'){ const txt = document.getElementById('qInput_Match').value, ps = []; document.querySelectorAll('#matchingPairsContainer .grid').forEach(r => { const l = r.querySelector('.m-left').value, rv = r.querySelector('.m-right').value; if(l && rv) ps.push({l, r:rv}); }); if(!txt || ps.length < 2) return window.showMessage("Cần 2 cặp!"); q.q = txt; q.pairs = ps; }
+            else if(t==='GROUPING'){ const g1 = document.getElementById('groupName1').value, i1 = document.getElementById('groupItems1').value.split('\n').filter(s=>s.trim()), g2 = document.getElementById('groupName2').value, i2 = document.getElementById('groupItems2').value.split('\n').filter(s=>s.trim()); if(!g1 || !g2 || !i1.length || !i2.length) return window.showMessage("Điền đủ nhóm!"); q.q = "Phân loại vào nhóm đúng:"; q.groups = [{name: g1, items: i1}, {name: g2, items: i2}]; }
+            if(editingQuizIndex !== null){ quizDataList[editingQuizIndex] = q; window.showMessage("Đã cập nhật!", COLORS.success); } else { quizDataList.push(q); window.showMessage("Đã thêm!", COLORS.success); }
+            window.resetEditor(); window.updateQuizPreview(); window.playSound('ting');
+        };
+        window.updateQuizPreview = () => { const l = document.getElementById('quizPreviewList'); l.innerHTML = ''; quizDataList.forEach((it, i) => { const d = document.createElement('div'); d.className = "flex justify-between items-center bg-white/5 hover:bg-white/10 p-2 rounded-xl mb-1 text-[11px] cursor-pointer transition-all"; d.onclick = () => window.loadQuizToEditor(i); d.innerHTML = `<span class="flex-grow truncate pr-2">#${i+1} [${it.type}] ${it.q ? it.q.substring(0,30) : "Bài tập"}...</span><button onclick="event.stopPropagation(); quizDataList.splice(${i},1); window.resetEditor(); window.updateQuizPreview();">✕</button>`; l.appendChild(d); }); };
+        window.loadSavedQuizSets = () => { if(!db) return; db.transaction('QuizSets','readonly').objectStore('QuizSets').getAll().onsuccess = e => { const c = document.getElementById('savedQuizSetsList'); c.innerHTML = ''; e.target.result.forEach(i => { const d = document.createElement('div'); d.className = "bg-white/10 p-2 rounded-lg cursor-pointer flex justify-between items-center mb-1 transition-all hover:bg-white/20"; d.innerHTML = `<span>${i.setName}</span><button onclick="event.stopPropagation(); window.deleteQuizSet(${i.id})">✕</button>`; d.onclick = () => { quizDataList = i.quizzes; window.updateQuizPreview(); window.showMessage("Đã nạp bộ CH!"); window.resetEditor(); }; c.appendChild(d); }); }; };
+        window.saveCurrentQuizSet = () => { if(!db) return; const n = document.getElementById('newQuizSetName').value.trim() || 'Bộ CH mới'; if(!quizDataList.length) return window.showMessage("Trống!"); const tx = db.transaction('QuizSets','readwrite'); tx.objectStore('QuizSets').add({setName: n, quizzes: quizDataList}); tx.oncomplete = () => { window.loadSavedQuizSets(); window.showMessage("Đã lưu bộ CH!", COLORS.success); document.getElementById('newQuizSetName').value = ''; }; };
+        window.deleteQuizSet = (id) => { if(confirm("Xóa bộ này?")) db.transaction('QuizSets','readwrite').objectStore('QuizSets').delete(id).onsuccess = window.loadSavedQuizSets; };
+        window.clearQuizzes = () => { quizDataList = []; window.updateQuizPreview(); window.resetEditor(); };
+
+        // --- GAMEPLAY ---
+        window.selectTheme = (t) => {
+            currentTheme = t; ['STAR', 'OCEAN', 'CHIBI'].forEach(x => { const b = document.getElementById(`btnTheme${x}`); if(b) b.style.borderColor = (x===t)?COLORS.accent:'transparent'; });
+            document.body.className = t==='STAR'?'bg-stars':t==='OCEAN'?'bg-ocean':'bg-chibi';
+            const themeColors = { 'STAR': '#fbbf24', 'OCEAN': '#22d3ee', 'CHIBI': '#f97316' }; document.querySelectorAll('.scanning-bulb').forEach(b => b.style.setProperty('--accent', themeColors[t]));
+            const titles = { 'STAR': "NGÔI SAO THÔNG THÁI", 'OCEAN': "ĐẠI DƯƠNG XANH", 'CHIBI': "ĐẠI LỄ TÌM VUA" };
+            const pickTexts = { 'STAR': "TÌM SAO THÔNG THÁI 🔍", 'OCEAN': "TÌM VUA BIỂN CẢ 🔍", 'CHIBI': "TÌM NHÀ VUA 🔍" };
+            document.getElementById('setupMainTitle').innerText = document.getElementById('mainGameTitle').innerText = titles[t];
+            document.getElementById('btnStartPick').innerText = pickTexts[t];
+        };
+        window.setPlayMode = (m) => { currentMode = m; document.getElementById('playModeName').classList.toggle('mode-toggle-active', m==='NAME'); document.getElementById('playModeQuiz').classList.toggle('mode-toggle-active', m==='QUIZ'); document.getElementById('chibiPickControls').classList.toggle('hidden', m !== 'NAME'); window.renderStars(); };
+        window.backToSetup = () => { document.getElementById('gameScreen').classList.add('hidden'); document.getElementById('setupScreen').classList.remove('hidden'); };
+        window.startGame = () => {
+            const ni = document.getElementById('studentNames').value.split('\n').map(s=>s.trim()).filter(s=>s); if(!ni.length) return window.showMessage("Nhập tên học sinh!");
+            namePool = ni.sort(()=>Math.random()-0.5).map(n => {
+                let ic = currentTheme==='CHIBI'?(collections.king_common?`<img src="${collections.king_common}" class="fit-img">`:SVG_ASSETS.KING_DEFAULT) :
+                        currentTheme==='STAR'?(collections.star.length?`<img src="${collections.star[Math.floor(Math.random()*collections.star.length)]}" class="fit-img">`:SVG_ASSETS.STAR_DEFAULT) :
+                        (collections.ocean.length?`<img src="${collections.ocean[Math.floor(Math.random()*collections.ocean.length)]}" class="fit-img">`:SVG_ASSETS.OCEAN_DEFAULT);
+                return { val: n, used: false, icon: ic };
+            });
+            quizPool = quizDataList.map(q => ({val: q, used: false})); document.getElementById('setupScreen').classList.add('hidden'); document.getElementById('gameScreen').classList.remove('hidden'); window.setPlayMode('NAME');
+        };
+        window.renderStars = () => {
+            const g = document.getElementById('starsGrid'); if(!g) return; g.innerHTML = ''; const pool = currentMode==='NAME'?namePool:quizPool;
+            pool.forEach((it, i) => { if(it.used) return; const b = document.createElement('div'); b.className = 'game-object flex flex-col items-center'; let c = currentMode==='QUIZ'?SVG_ASSETS.SPACESHIP(i+1):it.icon; b.innerHTML = `<div onclick="window.handleObjectClick(this, ${i})" class="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center rounded-full glass-panel overflow-hidden">${c}</div>${currentMode==='NAME'?`<div class="mt-2 font-bold text-center text-white">${it.val}</div>`:''}`; g.appendChild(b); });
+            document.getElementById('remainingCount').innerText = pool.filter(i=>!i.used).length;
+        };
+        window.handleObjectClick = (el, i) => { if(currentMode==='NAME'){ namePool[i].used = true; window.showNameResult(namePool[i]); } else { el.parentElement.classList.add('revealing'); window.playSound('ting'); setTimeout(()=>window.showQuizPlayer(quizPool[i].val, i), 800); } };
+        window.startChibiPick = () => {
+            const ni = namePool.filter(it=>!it.used); if(!ni.length) return window.showMessage("Hết danh sách!");
+            const s = document.getElementById('suspenseContainer'); const bs = document.querySelectorAll('.scanning-bulb');
+            s.style.display = 'block'; bs.forEach(b => b.style.display = 'block'); window.startBGM(); let start = Date.now();
+            const a = () => { if(Date.now()-start < 4000){ document.getElementById('suspenseName').innerText = ni[Math.floor(Math.random()*ni.length)].val; requestAnimationFrame(a); } else { s.style.display = 'none'; bs.forEach(b => b.style.display = 'none'); window.stopBGM(); const t = namePool.findIndex(it => it.val === document.getElementById('suspenseName').innerText && !it.used); if(t===-1) return; namePool[t].used = true; window.showNameResult(namePool[t]); window.renderStars(); } }; a();
+        };
+        window.showQuizPlayer = (q, pIdx) => {
+            const m = document.getElementById('quizModal'), a = document.getElementById('quizInteractionArea'); m.classList.remove('hidden'); a.innerHTML = ''; document.getElementById('quizFeedback').classList.add('hidden'); document.getElementById('qText').innerText = q.q || "";
+            if(q.type==='MULTIPLE_CHOICE'){
+                const g = document.createElement('div'); g.className = "grid grid-cols-1 md:grid-cols-2 gap-6 mt-8";
+                q.options.forEach((opt, i) => { const b = document.createElement('button'); b.className = "bg-white/10 hover:bg-cyan-600 p-6 rounded-3xl border-2 border-white/5 font-bold text-xl flex items-center gap-4 transition-all"; b.innerHTML = `<span class="bg-indigo-600 w-12 h-12 rounded-full flex items-center justify-center">${String.fromCharCode(65+i)}</span><span class="flex-1 text-left">${opt}</span>`; b.onclick = () => { if(i===q.correct) window.checkQuizAnswer(true, pIdx); else { window.playSound('wrong'); b.disabled = true; b.style.opacity = '0.5'; window.showMessage(ENCOURAGEMENT[Math.floor(Math.random()*ENCOURAGEMENT.length)], COLORS.danger); } }; g.appendChild(b); }); a.appendChild(g);
+            } else if (q.type==='FILL_BLANK'){
+                const c = document.createElement('div'), p = document.createElement('div'), pool = document.createElement('div'); c.className="mt-8 flex flex-col gap-10"; p.className="text-2xl leading-loose text-left p-10 bg-black/40 rounded-[3rem] border border-white/10"; pool.className="flex flex-wrap justify-center gap-4 p-8 bg-white/5 rounded-3xl"; let solved = 0, last = 0;
+                [...q.blanks].forEach((b,i) => { p.appendChild(document.createTextNode(q.fullText.substring(last, b.start))); const h = document.createElement('div'); h.className = "quiz-drop-hole"; h.dataset.correct = b.val; h.setAttribute('data-index', `[${i+1}]`); h.id = 'h-fb-'+i; h.ondragover = e => { e.preventDefault(); h.classList.add('drag-over'); }; h.ondragleave = () => h.classList.remove('drag-over'); h.ondrop = e => { e.preventDefault(); h.classList.remove('drag-over'); const w = e.dataTransfer.getData('text'), sid = e.dataTransfer.getData('sid'); if(w === h.dataset.correct){ window.playSound('win'); h.innerHTML = `<span class="text-yellow-400 font-black">${w}</span>`; h.style.border = "none"; if(sid) document.getElementById(sid).remove(); solved++; if(solved === q.blanks.length) window.checkQuizAnswer(true, pIdx); } else { window.playSound('wrong'); window.showMessage(ENCOURAGEMENT[Math.floor(Math.random()*ENCOURAGEMENT.length)], COLORS.danger); } }; p.appendChild(h); last = b.end; }); p.appendChild(document.createTextNode(q.fullText.substring(last))); [...q.blanks].sort(()=>Math.random()-0.5).forEach(b => { const ch = document.createElement('div'); ch.className = "draggable-chip text-white"; ch.innerText = b.val; ch.id = 'd-fb-'+Math.random().toString(36).substr(2,9); ch.draggable = true; ch.ondragstart = e => { e.dataTransfer.setData('text', b.val); e.dataTransfer.setData('sid', ch.id); }; pool.appendChild(ch); }); c.appendChild(p); c.appendChild(pool); a.appendChild(c);
+            } else if (q.type==='MATCHING'){
+                const mb = document.createElement('div'), lc = document.createElement('div'), rc = document.createElement('div'); mb.className = "grid grid-cols-2 gap-10 mt-8"; lc.className = rc.className = "flex flex-col gap-4"; let solved = 0, selL = null, selEl = null;
+                q.pairs.map(p=>p.l).sort(()=>Math.random()-0.5).forEach(t => { const d = document.createElement('div'); d.className = "bg-white/10 border border-white/20 p-5 rounded-2xl font-bold cursor-pointer transition-all"; d.innerText = t; d.onclick = () => { if(d.classList.contains('matching-solved')) return; document.querySelectorAll('.matching-selected').forEach(x => x.classList.remove('matching-selected')); d.classList.add('matching-selected'); selL = t; selEl = d; }; lc.appendChild(d); });
+                q.pairs.map(p=>p.r).sort(()=>Math.random()-0.5).forEach(t => { const d = document.createElement('div'); d.className = "bg-white/10 border border-white/20 p-5 rounded-2xl font-bold cursor-pointer transition-all text-white"; d.innerText = t; d.onclick = () => { if(!selL || d.classList.contains('matching-solved')) return; if(q.pairs.find(p=>p.l===selL && p.r===t)){ window.playSound('win'); d.classList.add('matching-solved'); selEl.classList.add('matching-solved'); solved++; if(solved === q.pairs.length) window.checkQuizAnswer(true, pIdx); } else { window.playSound('wrong'); window.showMessage(ENCOURAGEMENT[Math.floor(Math.random()*ENCOURAGEMENT.length)], COLORS.danger); } selL = null; document.querySelectorAll('.matching-selected').forEach(x => x.classList.remove('matching-selected')); }; rc.appendChild(d); }); mb.appendChild(lc); mb.appendChild(rc); a.appendChild(mb);
+            } else if (q.type==='GROUPING'){
+                const c=document.createElement('div'), zc=document.createElement('div'), pool=document.createElement('div'); c.className="mt-6 flex flex-col gap-10"; zc.className="grid grid-cols-2 gap-8"; pool.className="flex flex-wrap justify-center gap-4 p-8 bg-white/5 rounded-3xl border border-white/10"; let items=[]; q.groups.forEach(g => g.items.forEach(it => items.push({text:it, group:g.name}))); items.sort(()=>Math.random()-0.5); let solved=0;
+                items.forEach(it => { const d=document.createElement('div'); d.className="draggable-chip text-white"; d.innerText=it.text; d.id='dg-'+Math.random().toString(36).substr(2,9); d.draggable=true; d.ondragstart=e=>{e.dataTransfer.setData('text', JSON.stringify(it)); e.dataTransfer.setData('sid', d.id);}; pool.appendChild(d); });
+                q.groups.forEach((g, idx) => { 
+                    const z = document.createElement('div'); z.className = `group-box zone-${idx+1} text-center`; 
+                    z.innerHTML = `<div class="bg-${idx === 0 ? 'pink' : 'cyan'}-600/20 py-3 rounded-2xl mb-4 border-b border-white/10"><h4 class="text-2xl font-black text-${idx === 0 ? 'pink' : 'cyan'}-400 uppercase tracking-tighter">${g.name}</h4></div><div class="items flex flex-wrap gap-3 justify-center min-h-[160px]"></div>`; 
+                    z.ondragover = e => { e.preventDefault(); z.classList.add('drag-over'); }; z.ondragleave = () => z.classList.remove('drag-over');
+                    z.ondrop = e => { e.preventDefault(); z.classList.remove('drag-over'); const d = JSON.parse(e.dataTransfer.getData('text')), sid = e.dataTransfer.getData('sid'); 
+                        if(d.group === g.name){ window.playSound('win'); const t=document.createElement('div'); t.className="bg-green-600 px-5 py-2 rounded-xl font-bold text-xs text-white shadow-lg animate-bounce"; t.innerText=d.text; z.querySelector('.items').appendChild(t); if(sid) document.getElementById(sid).remove(); solved++; if(solved === items.length) window.checkQuizAnswer(true, pIdx); } else { window.playSound('wrong'); window.showMessage(ENCOURAGEMENT[Math.floor(Math.random()*ENCOURAGEMENT.length)], COLORS.danger); }
+                    }; zc.appendChild(z);
+                }); c.appendChild(pool); c.appendChild(zc); a.appendChild(c);
+            }
+        };
+        window.checkQuizAnswer = (isCorrect, pIdx) => { if(isCorrect){ window.playSound('win'); window.createConfetti(); quizPool[pIdx].used = true; document.getElementById('quizFeedback').classList.remove('hidden'); } };
+        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); window.renderStars(); };
+        window.showNameResult = (it) => {
+            window.playSound('win'); window.createConfetti(); document.getElementById('winnerName').innerText = it.val;
+            const idp = document.getElementById('winnerIconDisplay'), rl = document.getElementById('resultLabel'), st = document.getElementById('winnerSubText');
+            if(currentTheme === 'CHIBI'){ idp.innerHTML = collections.king_winner?`<img src="${collections.king_winner}" class="fit-img">`:SVG_ASSETS.KING_DEFAULT; rl.innerText = "Sắc lệnh truyền rằng..."; st.innerText = "LÀ VUA HÔM NAY! 👑"; }
+            else if(currentTheme === 'STAR'){ idp.innerHTML = it.icon || SVG_ASSETS.STAR_DEFAULT; rl.innerText = "Hào quang tỏa sáng..."; st.innerText = "CHÚC MỪNG NGÔI SAO THÔNG THÁI NHẤT HÔM NAY"; }
+            else { idp.innerHTML = it.icon || SVG_ASSETS.OCEAN_DEFAULT; rl.innerText = "Chúc mừng vua biển cả..."; st.innerText = "🐚🌊🔱"; }
+            document.getElementById('resultModal').classList.remove('hidden');
+        };
+        window.createConfetti = () => { const cs = ['#facc15', '#eab308', '#ffffff']; for(let i=0; i<60; i++){ const c = document.createElement('div'); c.style.cssText = `position:fixed; left:${Math.random()*100}vw; background-color:${cs[Math.floor(Math.random()*3)]}; width:10px; height:10px; top:-20px; z-index:4000; border-radius:50%;`; const anim = 'fall'+Math.random().toString(36).substr(2,5); const s = document.createElement('style'); s.innerHTML = `@keyframes ${anim} { to { transform: translateY(110vh) rotate(360deg); opacity:0; } }`; document.head.appendChild(s); c.style.animation = `${anim} ${Math.random()*2+2}s linear forwards`; document.body.appendChild(c); setTimeout(() => { c.remove(); s.remove(); }, 4000); } };
+        window.showMessage = (msg, color = COLORS.accent) => { const b = document.getElementById('messageBox'); b.innerText = msg; b.style.backgroundColor = color; b.classList.remove('hidden'); b.style.display = 'block'; setTimeout(() => { b.classList.add('hidden'); b.style.display = 'none'; }, 2500); };
+        window.onload = () => { window.initDB(); for(let i=0; i<40; i++){ const s=document.createElement('div'); s.className='twinkling-star'; s.style.width=s.style.height=(Math.random()*2+1)+'px'; s.style.left=Math.random()*100+'%'; s.style.top=Math.random()*100+'%'; s.style.setProperty('--duration',(Math.random()*3+2)+'s'); document.getElementById('themeBackground').appendChild(s); } window.selectTheme('STAR'); };
+    </script>
+</body>
+</html>
